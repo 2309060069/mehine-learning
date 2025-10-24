@@ -165,4 +165,68 @@ loan_data = [
     ['低', '有工作', '良好', 'yes']
 ]
 
+
 print(choose_best_feature_split(loan_data))
+#让我也来试一试
+def majority_cnt(class_list):
+    """
+    功能：统计 class_list 中各类别出现的次数，并按出现次数从多到少排序返回。
+    参数：
+        class_list: 列表，例如 ['yes', 'no', 'yes', 'yes', 'no']
+    返回：
+        一个按类别出现次数从多到少排列的列表，例如：
+        [('yes', 3), ('no', 2)]
+    """
+     # 1. 定义一个空字典，用于存放每个类别及其计数
+    class_count={}
+    # 2. 遍历类别列表，对每个类别进行计数
+    for vote in class_list:
+        # 如果该类别还未在字典中出现，先初始化计数为0
+        if vote not in class_count.keys():class_count[vote]=0
+        # 累加该类别的出现次数
+        class_count[vote]+=1
+    # 3. 将字典的键值对（类别, 次数）转为列表，并按次数进行降序排序
+    # operator.itemgetter(1) 表示按照元组中第2个元素（计数）排序
+    # dict.items() => [('yes',3), ('no',2)]
+    # 按出现次数排序
+     # 降序排列
+    sorted_class_count=sorted(class_count.items(),key=operator.itemgetter(1),reverse=True)
+    return sorted_class_count
+
+    # #根据天气情况判断是否打球
+    # dataset = [['晴','弱','否'],
+    #            ['晴','强','否'],
+    #           ['阴','弱','是'],
+    #            ['雨','弱','是'],
+    #            ['雨','强','否']]
+
+def creat_tree(dataset,labels):
+    # 取出数据集中每条样本的“标签列”（通常是最后一列）
+    class_list=[example[-1] for example in dataset]  #['否'，'否'，'是'，'是'，'否'，]
+    # 递归出口①：若所有样本同类，直接返回该类
+    if class_list.count(class_list[0])==len(class_list):  #  3==5？
+        return class_list[0]
+    # 递归出口②：若没有可用特征（只剩标签列），返回多数类
+    # dataset[0] 的长度 = 特征数 + 1（标签列）
+    if len(dataset[0])==1:  #3==1？
+        return majority_cnt(class_list)
+    # 选择“最优划分特征”的下标
+    best_feat=choose_best_feature_split(dataset)   #best_feat=0
+     # 取出该特征对应的名称（可读性用）
+    best_feat_label=labels[best_feat] #否
+    # 构建当前节点
+    my_tree={best_feat_label:{}}   #my_tree={'晴':'否'}
+    del(labels[best_feat])
+     # 取出该特征在所有样本上的取值列表
+    feat_values=[example[best_feat] for example in dataset]  #晴晴阴雨雨
+    # 去重：该特征有哪些不同的取值
+    unique_vals=set(feat_values)  #晴阴雨
+    # 对该特征的每个取值，分别递归构建子树
+    for value in unique_vals:  #晴
+        sub_labels=labels[:]   # 拷贝一份标签名列表给子递归使用
+        # 把当前特征=某取值的样本切分出来
+        my_tree[best_feat_label][value]=creat_tree(split_dataset(dataset,best_feat,value),sub_labels)
+    return my_tree
+
+my_data,labels=create_dataSet()
+my_tree=creat_tree(my_data,labels)
